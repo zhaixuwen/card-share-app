@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>简易社交分享卡片生成器</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts - Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- html2canvas CDN for capturing HTML element as image -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        /* Custom styles for the Inter font if needed, though Tailwind's font-inter class usually handles it */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Basic transition for smooth style changes */
+        .transition-all-ease {
+            transition: all 0.3s ease-in-out;
+        }
+        /* Removed custom .card-body-content CSS as its properties will be handled by Tailwind classes directly on cardBody */
+    </style>
+</head>
+<body class="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
+
+    <h1 class="text-4xl font-bold text-gray-800 mb-8">社交分享卡片生成器</h1>
+
+    <div class="w-full max-w-2xl bg-white rounded-lg shadow-md p-6 mb-8">
+        <div class="mb-4">
+            <label for="inputTitle" class="block text-gray-700 text-sm font-bold mb-2">标题:</label>
+            <input
+                type="text"
+                id="inputTitle"
+                class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg"
+                placeholder="输入标题..."
+                value=""
+            />
+        </div>
+        <div class="mb-4">
+            <label for="inputBody" class="block text-gray-700 text-sm font-bold mb-2">正文:</label>
+            <textarea
+                id="inputBody"
+                class="w-full h-32 p-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg resize-none"
+                placeholder="在这里输入您的分享内容..."
+            ></textarea>
+        </div>
+        <div class="mb-4">
+            <label for="inputSource" class="block text-gray-700 text-sm font-bold mb-2">来源:</label>
+            <input
+                type="text"
+                id="inputSource"
+                class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg"
+                placeholder="输入来源..."
+                value=""
+            />
+        </div>
+        <button
+            id="generateButton"
+            class="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transform transition-transform duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+            随机生成卡片样式
+        </button>
+    </div>
+
+    <div class="w-full max-w-xl">
+        <h2 class="text-2xl font-semibold text-gray-700 mb-4 text-center">您的分享卡片预览</h2>
+        <div
+            id="shareCard"
+            class="relative p-8 rounded-xl shadow-2xl min-h-48 flex flex-col justify-between text-center overflow-hidden transition-all-ease"
+            style="background-color: #a78bfa; color: #fff; font-family: 'Inter', sans-serif;" /* Initial styles */
+        >
+            <!-- Card Title -->
+            <div id="cardTitle" class="font-bold mb-2 break-words whitespace-pre-wrap"></div>
+            <!-- Card Body (main content) -->
+            <!-- flex-grow for spacing, min-h-[50%] to ensure it takes enough vertical space -->
+            <div id="cardBody" class="flex-grow min-h-[50%] flex items-center justify-center break-words whitespace-pre-wrap leading-relaxed"></div>
+            <!-- Card Source -->
+            <div id="cardSource" class="text-sm mt-2 w-full break-words whitespace-pre-wrap"></div>
+        </div>
+        <button
+            id="downloadButton"
+            class="mt-6 w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transform transition-transform duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-500"
+        >
+            下载卡片
+        </button>
+    </div>
+
+    <script>
+        // Get references to DOM elements
+        const inputTitleElement = document.getElementById('inputTitle');
+        const inputBodyElement = document.getElementById('inputBody');
+        const inputSourceElement = document.getElementById('inputSource');
+        const generateButton = document.getElementById('generateButton');
+        const downloadButton = document.getElementById('downloadButton'); // New download button
+        const shareCard = document.getElementById('shareCard');
+        const cardTitle = document.getElementById('cardTitle');
+        const cardBody = document.getElementById('cardBody');
+        const cardSource = document.getElementById('cardSource');
+
+        // Define a set of possible styles
+        const backgrounds = [
+            'bg-gray-200',        // 浅灰色
+            'bg-blue-100',        // 浅蓝色
+            'bg-green-100',       // 浅绿色
+            'bg-yellow-100',      // 浅黄色
+            'bg-purple-100',      // 浅紫色
+            'bg-red-100',         // 浅红色 (非常浅)
+            'bg-teal-100',        // 浅青色
+            'bg-indigo-100',      // 浅靛色
+            'bg-pink-100',        // 浅粉色
+
+            'bg-gradient-to-br from-blue-100 to-purple-100',  // 浅蓝到浅紫渐变
+            'bg-gradient-to-br from-green-100 to-teal-100',   // 浅绿到浅青渐变
+            'bg-gradient-to-br from-yellow-100 to-orange-100', // 浅黄到浅橙渐变
+            'bg-gradient-to-br from-pink-100 to-red-100',     // 浅粉到浅红渐变
+            'bg-gradient-to-br from-gray-200 to-gray-300',     // 浅灰到中灰渐变
+        ];
+
+        const fontFamilies = [
+            'font-sans',
+            'font-serif',
+            'font-mono',
+            'font-inter',
+        ];
+
+        const textColors = [
+            'text-gray-800',  // 深灰色 (适用于浅背景)
+            'text-gray-700',
+            'text-blue-800',  // 深蓝色
+            'text-green-800', // 深绿色
+            'text-purple-800',// 深紫色
+            'text-black',     // 纯黑色
+            'text-blue-900',
+            'text-pink-900',
+            'text-indigo-900',
+        ];
+
+        // Define different layout configurations
+        const layouts = [
+            // Layout 1: Default (Title top-center, Body center-left, Source bottom-right)
+            {
+                card: 'flex-col justify-between items-center',
+                title: 'text-center text-4xl',
+                body: 'text-left items-center justify-center',
+                source: 'text-right',
+            },
+            // Layout 2: All content left-aligned
+            {
+                card: 'flex-col justify-between items-start', // Align card items to start
+                title: 'text-left text-4xl',
+                body: 'text-left items-start justify-start', // Align body content to start
+                source: 'text-left',
+            },
+            // Layout 3: Title at bottom, body at top (reversed order)
+            {
+                card: 'flex-col justify-between items-center',
+                title: 'text-center order-last text-4xl', // Title moves to bottom
+                body: 'text-center order-first items-center justify-center', // Body moves to top, centered
+                source: 'text-right',
+            },
+            // Layout 4: Body centered, title/source smaller and centered
+            {
+                card: 'flex-col justify-center items-center', // Everything centered
+                title: 'text-center text-2xl', // Smaller title
+                body: 'text-center items-center justify-center', // Body centered
+                source: 'text-center text-sm', // Smaller source
+            }
+        ];
+
+        // Comprehensive lists of all possible layout-related classes for clearing
+        const allCardLayoutClasses = ['flex-col', 'justify-between', 'items-center', 'justify-start', 'items-start', 'justify-end', 'justify-around'];
+        const allTitleLayoutClasses = ['text-center', 'text-left', 'text-right', 'order-first', 'order-last', 'text-xl', 'text-2xl', 'text-3xl', 'text-4xl', 'text-5xl', 'text-6xl'];
+        const allBodyLayoutClasses = ['text-left', 'text-center', 'text-right', 'items-center', 'justify-center', 'items-start', 'justify-start', 'order-first', 'order-last', 'text-xl', 'text-2xl', 'text-3xl', 'text-4xl', 'text-5xl', 'text-6xl', 'text-7xl', 'text-8xl', 'text-9xl'];
+        const allSourceLayoutClasses = ['text-left', 'text-center', 'text-right', 'order-first', 'order-last', 'text-xs', 'text-sm', 'text-base', 'text-lg'];
+
+        // Function to update card text content and adjust font size for body based on text length
+        function updateCardContent() {
+            const title = inputTitleElement.value;
+            const body = inputBodyElement.value;
+            const source = inputSourceElement.value;
+
+            cardTitle.textContent = title;
+            cardBody.textContent = body;
+            // Add a two-segment dash and guillemets before and after the source text if source is not empty
+            cardSource.textContent = source ? '——《' + source + '》' : '';
+
+            // Adjust font size for the body text based on its length
+            const bodyTextLength = body.length;
+            let bodyFontSizeClass = 'text-3xl'; // Default for body
+
+            if (bodyTextLength > 150) {
+                bodyFontSizeClass = 'text-xl';
+            } else if (bodyTextLength > 100) {
+                bodyFontSizeClass = 'text-2xl';
+            } else if (bodyTextLength > 50) {
+                bodyFontSizeClass = 'text-3xl';
+            } else if (bodyTextLength > 20) {
+                bodyFontSizeClass = 'text-4xl';
+            } else {
+                bodyFontSizeClass = 'text-5xl'; // For very short body texts
+            }
+
+            // Define all possible Tailwind font size classes that might be applied to the body
+            const allBodyDynamicFontSizeClasses = ['text-xs', 'text-sm', 'text-base', 'text-lg', 'text-xl', 'text-2xl', 'text-3xl', 'text-4xl', 'text-5xl', 'text-6xl', 'text-7xl', 'text-8xl', 'text-9xl'];
+
+            // Remove any existing dynamic font size classes from cardBody before applying the new one
+            cardBody.classList.remove(...allBodyDynamicFontSizeClasses.filter(cls => cardBody.classList.contains(cls)));
+            // Add the determined font size class to cardBody
+            cardBody.classList.add(bodyFontSizeClass);
+        }
+
+        // Function to generate random styles and apply them
+        function generateRandomStyles() {
+            // Clear previous background classes from shareCard
+            const allBackgroundClasses = backgrounds.flatMap(bg => bg.split(' '));
+            shareCard.classList.remove(...allBackgroundClasses.filter(cls => shareCard.classList.contains(cls)));
+
+            // Clear previous font family and text color classes from cardTitle, cardBody, cardSource
+            const allFontAndColorClasses = [...fontFamilies, ...textColors];
+            cardTitle.classList.remove(...allFontAndColorClasses.filter(cls => cardTitle.classList.contains(cls)));
+            cardBody.classList.remove(...allFontAndColorClasses.filter(cls => cardBody.classList.contains(cls)));
+            cardSource.classList.remove(...allFontAndColorClasses.filter(cls => cardSource.classList.contains(cls)));
+
+            // Clear previous layout classes from elements
+            shareCard.classList.remove(...allCardLayoutClasses.filter(cls => shareCard.classList.contains(cls)));
+            cardTitle.classList.remove(...allTitleLayoutClasses.filter(cls => cardTitle.classList.contains(cls)));
+            cardBody.classList.remove(...allBodyLayoutClasses.filter(cls => cardBody.classList.contains(cls)));
+            cardSource.classList.remove(...allSourceLayoutClasses.filter(cls => cardSource.classList.contains(cls)));
+
+
+            // Randomly select new styles
+            const randomBackground = backgrounds[Math.floor(Math.random() * backgrounds.length)];
+            const randomFont = fontFamilies[Math.floor(Math.random() * fontFamilies.length)];
+            const randomTextColor = textColors[Math.floor(Math.random() * textColors.length)];
+            const randomLayout = layouts[Math.floor(Math.random() * layouts.length)];
+
+            // Apply new background, font, and text color classes
+            shareCard.classList.add(...randomBackground.split(' '));
+            cardTitle.classList.add(randomFont, randomTextColor);
+            cardBody.classList.add(randomFont, randomTextColor);
+            cardSource.classList.add(randomFont, randomTextColor);
+
+            // Apply new layout classes
+            shareCard.classList.add(...randomLayout.card.split(' '));
+            cardTitle.classList.add(...randomLayout.title.split(' '));
+            cardBody.classList.add(...randomLayout.body.split(' '));
+            cardSource.classList.add(...randomLayout.source.split(' '));
+
+            // Update card text and adjust font size for body (must be called after layout classes are applied)
+            updateCardContent();
+        }
+
+        // Function to download the card as an image
+        function downloadCard() {
+            // Get the card element
+            const cardElement = document.getElementById('shareCard');
+
+            // Use html2canvas to capture the element
+            html2canvas(cardElement, {
+                scale: 2, // Increase scale for better quality image
+                useCORS: true // Important for handling external resources like fonts if any
+            }).then(canvas => {
+                // Convert canvas to image data URL
+                const imageDataURL = canvas.toDataURL('image/png');
+
+                // Create a temporary link element
+                const a = document.createElement('a');
+                a.href = imageDataURL;
+                a.download = 'social-share-card.png'; // Set the download filename
+                document.body.appendChild(a); // Append to body (required for Firefox)
+                a.click(); // Programmatically click the link to trigger download
+                document.body.removeChild(a); // Clean up the temporary link
+            }).catch(error => {
+                console.error('Error capturing card:', error);
+                alert('下载卡片失败，请稍后再试。'); // Use alert as a fallback for user feedback
+            });
+        }
+
+
+        // Initialize styles on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            generateRandomStyles(); // Generate initial styles and update content
+            // Add event listeners for input changes to update card content dynamically
+            inputTitleElement.addEventListener('input', updateCardContent);
+            inputBodyElement.addEventListener('input', updateCardContent);
+            inputSourceElement.addEventListener('input', updateCardContent);
+        });
+
+        // Add event listener to the buttons
+        generateButton.addEventListener('click', generateRandomStyles);
+        downloadButton.addEventListener('click', downloadCard); // Attach download function to button
+    </script>
+
+</body>
+</html>
