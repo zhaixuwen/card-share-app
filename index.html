@@ -6,8 +6,8 @@
     <title>简易社交分享卡片生成器</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts - Inter -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Google Fonts - Inter, Roboto, Open Sans, Lato, Montserrat, Merriweather, Playfair Display -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto:wght@400;700&family=Open+Sans:wght@400;700&family=Lato:wght@400;700&family=Montserrat:wght@400;700&family=Merriweather:wght@400;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
     <!-- html2canvas CDN for capturing HTML element as image -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
@@ -100,6 +100,7 @@
 
         // Define a set of possible styles
         const backgrounds = [
+            // Existing low-saturation colors
             'bg-gray-200',        // 浅灰色
             'bg-blue-100',        // 浅蓝色
             'bg-green-100',       // 浅绿色
@@ -110,19 +111,68 @@
             'bg-indigo-100',      // 浅靛色
             'bg-pink-100',        // 浅粉色
 
+            // Existing low-saturation gradients
             'bg-gradient-to-br from-blue-100 to-purple-100',  // 浅蓝到浅紫渐变
             'bg-gradient-to-br from-green-100 to-teal-100',   // 浅绿到浅青渐变
             'bg-gradient-to-br from-yellow-100 to-orange-100', // 浅黄到浅橙渐变
             'bg-gradient-to-br from-pink-100 to-red-100',     // 浅粉到浅红渐变
             'bg-gradient-to-br from-gray-200 to-gray-300',     // 浅灰到中灰渐变
+
+            // Added more low-saturation solid colors
+            'bg-lime-100',        // 浅石灰绿
+            'bg-orange-100',      // 浅橙色
+            'bg-cyan-100',        // 浅青色 (不同于teal)
+            'bg-fuchsia-100',     // 浅紫红色
+            'bg-rose-100',        // 浅玫瑰色
+            'bg-emerald-100',     // 浅翠绿色
+            'bg-amber-100',       // 浅琥珀色
+            'bg-violet-100',      // 浅紫罗兰色
+
+            // Added more low-saturation gradients
+            'bg-gradient-to-tr from-lime-100 to-green-100',   // 浅石灰绿到浅绿渐变
+            'bg-gradient-to-tl from-orange-100 to-yellow-100',// 浅橙到浅黄渐变
+            'bg-gradient-to-br from-cyan-100 to-blue-100',    // 浅青到浅蓝渐变
+            'bg-gradient-to-bl from-fuchsia-100 to-purple-100',// 浅紫红到浅紫渐变
+            'bg-gradient-to-tr from-rose-100 to-pink-100',    // 浅玫瑰到浅粉渐变
+            'bg-gradient-to-br from-emerald-100 to-teal-100', // 浅翠绿到浅青渐变
+            'bg-gradient-to-tl from-amber-100 to-yellow-100', // 浅琥珀到浅黄渐变
+            'bg-gradient-to-br from-violet-100 to-indigo-100',// 浅紫罗兰到浅靛渐变
+            'bg-gradient-to-r from-gray-100 to-white',        // 浅灰到白渐变
+            'bg-gradient-to-l from-white to-gray-100',        // 白到浅灰渐变
         ];
 
+        // Added more font families (Google Fonts are linked in <head>)
         const fontFamilies = [
-            'font-sans',
-            'font-serif',
-            'font-mono',
-            'font-inter',
+            'font-sans',        // Default sans-serif
+            'font-serif',       // Default serif
+            'font-mono',        // Default monospace
+            'font-inter',       // Inter (from Google Fonts)
+            'font-roboto',      // Roboto (from Google Fonts)
+            'font-open-sans',   // Open Sans (from Google Fonts)
+            'font-lato',        // Lato (from Google Fonts)
+            'font-montserrat',  // Montserrat (from Google Fonts)
+            'font-merriweather',// Merriweather (from Google Fonts)
+            'font-playfair-display', // Playfair Display (from Google Fonts)
         ];
+
+        // Mapping for Tailwind font classes (if not directly mapped by Tailwind config)
+        // Note: Tailwind's JIT mode or custom config would handle these, but for CDN,
+        // we map them to generic font-family names or ensure they are loaded.
+        // For simplicity, we assume Tailwind's CDN handles basic font-family mapping.
+        // If specific Google Fonts don't apply, you might need custom CSS or a local build.
+        const fontClassMap = {
+            'font-inter': 'font-inter',
+            'font-roboto': 'font-roboto',
+            'font-open-sans': 'font-open-sans',
+            'font-lato': 'font-lato',
+            'font-montserrat': 'font-montserrat',
+            'font-merriweather': 'font-merriweather',
+            'font-playfair-display': 'font-playfair-display',
+            'font-sans': 'font-sans',
+            'font-serif': 'font-serif',
+            'font-mono': 'font-mono',
+        };
+
 
         const textColors = [
             'text-gray-800',  // 深灰色 (适用于浅背景)
@@ -134,6 +184,11 @@
             'text-blue-900',
             'text-pink-900',
             'text-indigo-900',
+            'text-red-800',   // 深红色
+            'text-orange-800',// 深橙色
+            'text-lime-800',  // 深石灰绿
+            'text-teal-800',  // 深青色
+            'text-fuchsia-800',// 深紫红色
         ];
 
         // Define different layout configurations
@@ -165,14 +220,56 @@
                 title: 'text-center text-2xl', // Smaller title
                 body: 'text-center items-center justify-center', // Body centered
                 source: 'text-center text-sm', // Smaller source
+            },
+            // Layout 5: Title and Body left-aligned, Source right-aligned (more traditional)
+            {
+                card: 'flex-col justify-between items-start',
+                title: 'text-left text-4xl',
+                body: 'text-left items-start justify-center',
+                source: 'text-right',
+            },
+            // Layout 6: Body and Source centered, Title left-aligned
+            {
+                card: 'flex-col justify-between items-start',
+                title: 'text-left text-4xl',
+                body: 'text-center items-center justify-center',
+                source: 'text-center',
+            },
+            // Layout 7: All content right-aligned
+            {
+                card: 'flex-col justify-between items-end', // Align card items to end
+                title: 'text-right text-4xl',
+                body: 'text-right items-end justify-end', // Align body content to end
+                source: 'text-right',
+            },
+            // Layout 8: Title and Source small, Body large and centered
+            {
+                card: 'flex-col justify-center items-center',
+                title: 'text-center text-xl mb-4', // Smaller title, more margin
+                body: 'text-center items-center justify-center text-5xl', // Larger body
+                source: 'text-center text-xs mt-4', // Smaller source, more margin
+            },
+            // Layout 9: Title and Source at top, Body below (more compact top)
+            {
+                card: 'flex-col justify-start items-center',
+                title: 'text-center text-3xl mb-1',
+                body: 'text-center items-center justify-center flex-grow mt-2',
+                source: 'text-center text-sm mt-1',
+            },
+            // Layout 10: Title and Body left-aligned, Source at very bottom right
+            {
+                card: 'flex-col justify-between items-start',
+                title: 'text-left text-4xl',
+                body: 'text-left items-start justify-start',
+                source: 'text-right self-end mt-auto', // self-end pushes it to the bottom right
             }
         ];
 
         // Comprehensive lists of all possible layout-related classes for clearing
-        const allCardLayoutClasses = ['flex-col', 'justify-between', 'items-center', 'justify-start', 'items-start', 'justify-end', 'justify-around'];
-        const allTitleLayoutClasses = ['text-center', 'text-left', 'text-right', 'order-first', 'order-last', 'text-xl', 'text-2xl', 'text-3xl', 'text-4xl', 'text-5xl', 'text-6xl'];
-        const allBodyLayoutClasses = ['text-left', 'text-center', 'text-right', 'items-center', 'justify-center', 'items-start', 'justify-start', 'order-first', 'order-last', 'text-xl', 'text-2xl', 'text-3xl', 'text-4xl', 'text-5xl', 'text-6xl', 'text-7xl', 'text-8xl', 'text-9xl'];
-        const allSourceLayoutClasses = ['text-left', 'text-center', 'text-right', 'order-first', 'order-last', 'text-xs', 'text-sm', 'text-base', 'text-lg'];
+        const allCardLayoutClasses = ['flex-col', 'justify-between', 'items-center', 'justify-start', 'items-start', 'justify-end', 'justify-around', 'justify-center'];
+        const allTitleLayoutClasses = ['text-center', 'text-left', 'text-right', 'order-first', 'order-last', 'text-xl', 'text-2xl', 'text-3xl', 'text-4xl', 'text-5xl', 'text-6xl', 'mb-1', 'mb-4'];
+        const allBodyLayoutClasses = ['text-left', 'text-center', 'text-right', 'items-center', 'justify-center', 'items-start', 'justify-start', 'items-end', 'justify-end', 'order-first', 'order-last', 'text-xl', 'text-2xl', 'text-3xl', 'text-4xl', 'text-5xl', 'text-6xl', 'text-7xl', 'text-8xl', 'text-9xl', 'mt-2', 'flex-grow'];
+        const allSourceLayoutClasses = ['text-left', 'text-center', 'text-right', 'order-first', 'order-last', 'text-xs', 'text-sm', 'text-base', 'text-lg', 'mt-1', 'mt-4', 'self-end', 'mt-auto'];
 
         // Function to update card text content and adjust font size for body based on text length
         function updateCardContent() {
@@ -217,7 +314,7 @@
             shareCard.classList.remove(...allBackgroundClasses.filter(cls => shareCard.classList.contains(cls)));
 
             // Clear previous font family and text color classes from cardTitle, cardBody, cardSource
-            const allFontAndColorClasses = [...fontFamilies, ...textColors];
+            const allFontAndColorClasses = [...fontFamilies.map(font => fontClassMap[font] || font), ...textColors]; // Use mapped font classes
             cardTitle.classList.remove(...allFontAndColorClasses.filter(cls => cardTitle.classList.contains(cls)));
             cardBody.classList.remove(...allFontAndColorClasses.filter(cls => cardBody.classList.contains(cls)));
             cardSource.classList.remove(...allFontAndColorClasses.filter(cls => cardSource.classList.contains(cls)));
@@ -237,9 +334,9 @@
 
             // Apply new background, font, and text color classes
             shareCard.classList.add(...randomBackground.split(' '));
-            cardTitle.classList.add(randomFont, randomTextColor);
-            cardBody.classList.add(randomFont, randomTextColor);
-            cardSource.classList.add(randomFont, randomTextColor);
+            cardTitle.classList.add(fontClassMap[randomFont] || randomFont, randomTextColor); // Use mapped font class
+            cardBody.classList.add(fontClassMap[randomFont] || randomFont, randomTextColor); // Use mapped font class
+            cardSource.classList.add(fontClassMap[randomFont] || randomFont, randomTextColor); // Use mapped font class
 
             // Apply new layout classes
             shareCard.classList.add(...randomLayout.card.split(' '));
